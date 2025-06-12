@@ -2,11 +2,14 @@ const express = require('express');
 const session = require('express-session');
 const bodyParser = require('body-parser');
 const path = require('path');
+// const Database = require('better-sqlite3');
 const sqlite3 = require('sqlite3').verbose();
 const bcrypt = require('bcryptjs');
 
+
 const app = express();
 const db = new sqlite3.Database('./notes.db');
+// const db = new Database('notes.db');
 
 app.use(express.static(path.join(__dirname, 'public')));
 app.use(bodyParser.urlencoded({ extended: true }));
@@ -83,4 +86,7 @@ app.get('/logout', (req, res) => {
     });
 });
 
-app.listen(3000, () => console.log('Server running on http://localhost:3000'));
+const port = process.env.PORT || 3000;
+app.listen(port, () => {
+  console.log(`Server running on port ${port}`);
+});

@@ -1,5 +1,5 @@
-const sqlite3 = require('sqlite3').verbose();
-const db = new sqlite3.Database('./notes.db');
+const Database = require('better-sqlite3');
+const db = new Database('notes.db');
 
 db.serialize(() => {
   db.run("ALTER TABLE notes ADD COLUMN created_at TEXT", (err) => {
