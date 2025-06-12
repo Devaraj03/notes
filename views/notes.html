@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head><title>My Notes</title><link rel="stylesheet" href="/css/style.css"></head>
+<style>
+  textarea { resize: none; }
+  .note-container {
+    border: 1px solid #ccc;
+    padding: 10px;
+    margin: 10px 0;
+    position: relative;
+    background: #f9f9f9;
+  }
+  .note-time {
+    position: absolute;
+    top: 1px;
+    right: 10px;
+    font-size: 0.75em;
+    color: #000000;
+  }
+</style>
+
+<body><div class="container">
+    <h2>Your Notes</h2>
+    <form id="newNoteForm">
+        <textarea name="content" placeholder="Write your note here..." required></textarea><br>
+        <button type="submit">Save Note</button>
+    </form>
+    <hr>
+    <label for="sortSelect">Sort:</label>
+<select id="sortSelect">
+  <option value="new">Newest to Oldest</option>
+  <option value="old">Oldest to Newest</option>
+</select>
+<div id="notesList"></div>
+    <div id="notesList"></div>
+    <br>
+    <br>
+    <a href="/logout">Logout</a>
+    <script>
+let notesData = [];
+
+async function loadNotes() {
+  const res = await fetch('/api/notes');
+  notesData = await res.json();
+  renderNotes();
+}
+
+function renderNotes() {
+  const sortValue = document.getElementById('sortSelect').value;
+  const sorted = [...notesData].sort((a, b) => {
+    return sortValue === 'new'
+      ? new Date(b.created_at) - new Date(a.created_at)
+      : new Date(a.created_at) - new Date(b.created_at);
+  });
+
+  const container = document.getElementById('notesList');
+  container.innerHTML = '';
+  sorted.forEach(note => {
+   const date = new Date(note.created_at);
+   const dateStr = date.toLocaleString('en-IN', {
+       year: 'numeric',
+       month: '2-digit',
+       day: '2-digit',
+       hour: '2-digit',
+       minute: '2-digit',
+       hour12: true
+     });
+
+    const wrapper = document.createElement('div');
+    wrapper.className = 'note-container';
+    wrapper.innerHTML = `
+      <div class="note-time">${dateStr}</div>
+      <textarea disabled>${note.content}</textarea>
+      <form method="POST" action="/edit" style="display:inline;">
+        <input type="hidden" name="id" value="${note.id}">
+        <input type="hidden" name="content">
+        <button type="submit">Update</button>
+      </form>
+      <form method="POST" action="/delete" style="display:inline;">
+        <input type="hidden" name="id" value="${note.id}">
+        <button type="submit">Delete</button>
+      </form>
+    `;
+
+    const textarea = wrapper.querySelector("textarea");
+    const form = wrapper.querySelector('form[action="/edit"]');
+    const hiddenInput = form.querySelector('input[name="content"]');
+    const updateButton = form.querySelector("button");
+
+    updateButton.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (textarea.disabled) {
+        textarea.disabled = false;
+        textarea.style.border = "2px solid orange";
+        updateButton.textContent = "Save";
+      } else {
+        hiddenInput.value = textarea.value;
+        form.submit();
+      }
+    });
+
+    container.appendChild(wrapper);
+  });
+}
+
+document.getElementById('sortSelect').addEventListener('change', renderNotes);
+
+        document.getElementById('newNoteForm').onsubmit = async function(e) {
+            e.preventDefault();
+            const content = this.content.value;
+            await fetch('/save', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: 'content=' + encodeURIComponent(content)
+            });
+            this.reset();
+            loadNotes();
+        };
+
+        loadNotes();
+    </script>
+</div></body>
+</html>
